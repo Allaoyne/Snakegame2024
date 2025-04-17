@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🎮 Snake Game</title>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      color: lime;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    canvas {
+      background-color: #111;
+      border: 2px solid lime;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐍 Snake Game</h1>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <div id="score">Score: 0</div>
+
+  <audio id="eatSound" src="https://freesound.org/data/previews/341/341695_3248244-lq.mp3"></audio>
+  <audio id="gameOverSound" src="https://freesound.org/data/previews/331/331912_3248244-lq.mp3"></audio>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const eatSound = document.getElementById("eatSound");
+    const gameOverSound = document.getElementById("gameOverSound");
+
+    const box = 20;
+    const canvasSize = 400;
+    let score = 0;
+    let speed = 150;
+
+    let snake = [];
+    snake[0] = { x: 9 * box, y: 10 * box };
+
+    let food = {
+      x: Math.floor(Math.random() * 19 + 1) * box,
+      y: Math.floor(Math.random() * 19 + 1) * box,
+    };
+
+    let direction;
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+      if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "lime" : "#0f0";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+        ctx.strokeStyle = "#222";
+        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+      }
+
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let snakeX = snake[0].x;
+      let snakeY = snake[0].y;
+
+      if (direction === "LEFT") snakeX -= box;
+      if (direction === "UP") snakeY -= box;
+      if (direction === "RIGHT") snakeX += box;
+      if (direction === "DOWN") snakeY += box;
+
+      if (snakeX === food.x && snakeY === food.y) {
+        score++;
+        eatSound.play();
+        food = {
+          x: Math.floor(Math.random() * 19 + 1) * box,
+          y: Math.floor(Math.random() * 19 + 1) * box,
+        };
+        if (speed > 60) {
+          speed -= 5;
+          clearInterval(game);
+          game = setInterval(draw, speed);
+        }
+      } else {
+        snake.pop();
+      }
+
+      let newHead = { x: snakeX, y: snakeY };
+
+      if (
+        snakeX < 0 || snakeX >= canvasSize ||
+        snakeY < 0 || snakeY >= canvasSize ||
+        collision(newHead, snake)
+      ) {
+        gameOverSound.play();
+        clearInterval(game);
+        alert("💀 Game Over! Final Score: " + score);
+        location.reload();
+      }
+
+      snake.unshift(newHead);
+      document.getElementById("score").innerText = "Score: " + score;
+    }
+
+    function collision(head, array) {
+      for (let i = 0; i < array.length; i++) {
+        if (head.x === array[i].x && head.y === array[i].y) return true;
+      }
+      return false;
+    }
+
+    
+    let game;
+    let isPaused = false;
+
+    function togglePause() {
+      if (isPaused) {
+        game = setInterval(draw, speed);
+        isPaused = false;
+      } else {
+        clearInterval(game);
+        isPaused = true;
+      }
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "p" || event.key === "P") {
+        togglePause();
+      }
+    });
+
+    game = setInterval(draw, speed);
+    
+  </script>
+</body>
+</html>
